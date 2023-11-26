@@ -1,0 +1,143 @@
+<body style="margin: 0px;">
+
+    <script>
+        const canvas = document.createElement('canvas');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const ctx = canvas.getContext('2d');
+        document.body.append(canvas);
+
+        function uuidv4() {
+            return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
+                (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+            );
+        }
+
+        function getRandomColor() {
+            var letters = '0123456789ABCDEF';
+            var color = '#';
+            for (var i = 0; i < 6; i++) {
+                color += letters[Math.floor(Math.random() * 16)];
+            }
+            return color;
+        }
+
+        const id = uuidv4();
+        const color = getRandomColor();
+        function screenDetails() {
+
+            return {
+
+                id,
+                x: window.screenLeft,
+                y: window.screenTop,
+                width: window.innerWidth,
+                height: window.innerHeight,
+                color
+
+            }
+
+        }
+
+        function getScreens() {
+
+            return JSON.parse(localStorage.getItem('screens')) || {};
+
+        }
+
+        function addScreen(screen) {
+
+            const screens = getScreens();
+            screens[screen.id] = screen;
+
+            localStorage.setItem('screens', JSON.stringify(screens));
+
+        }
+
+        function removeScreen(id) {
+
+            const screens = getScreens();
+            delete screens[id];
+
+            localStorage.setItem('screens', JSON.stringify(screens));
+
+        }
+
+        addScreen(screenDetails());
+        let screens = getScreens();
+
+        window.addEventListener('resize', () => {
+
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+        });
+
+        window.addEventListener("beforeunload", () => {
+
+            removeScreen(id);
+
+        });
+
+        window.addEventListener("pagehide", () => {
+
+            removeScreen(id);
+
+        });
+
+
+        function draw() {
+
+            addScreen(screenDetails());
+            screens = getScreens();
+            const screen = screens[id];
+
+            ctx.fillStyle = '#212121';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+
+            ctx.translate(-screen.x, -screen.y);
+
+            const screensValues = Object.values(screens);
+
+            for (const screen of screensValues) {
+
+                ctx.strokeStyle = screen.color;
+
+                ctx.beginPath();
+                ctx.arc(screen.x + (screen.width / 2), screen.y + (screen.height / 2), 50, 0, Math.PI * 2);
+                ctx.stroke();
+
+            }
+
+            for (let i = 0; i < screensValues.length; i++) {
+
+                const screen = screensValues[i];
+
+                ctx.strokeStyle = screen.color;
+
+                const cx = screen.x + (screen.width / 2);
+                const cy = screen.y + (screen.height / 2);
+                const nextScreen = screensValues[(i + 1) % screensValues.length];
+                const ncx = nextScreen.x + (nextScreen.width / 2);
+                const ncy = nextScreen.y + (nextScreen.height / 2);
+
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(ncx, ncy);
+                ctx.stroke();
+
+            }
+
+            ctx.restore();
+
+            requestAnimationFrame(draw);
+
+        }
+
+        draw();
+
+    </script>
+
+</body>
